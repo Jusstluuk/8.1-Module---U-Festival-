@@ -33,7 +33,6 @@ const i18n = {
     schedule_title_raw: 'Programma',
     saturday: 'Zaterdag',
     sunday: 'Zondag',
-    
     map_title_raw: 'Festivalkaart',
     locate_me: 'Mijn locatie',
     nav_home: 'Home',
@@ -77,7 +76,6 @@ const i18n = {
     schedule_title_raw: 'Programme',
     saturday: 'Saturday',
     sunday: 'Sunday',
-    schedule_tip: 'Tap an artist for more info · ❤️ to save',
     map_title_raw: 'Festival Map',
     locate_me: 'My Location',
     nav_home: 'Home',
@@ -98,19 +96,16 @@ function applyTranslations() {
     const k = el.getAttribute('data-i18n');
     if (i18n[currentLang][k] !== undefined) el.textContent = i18n[currentLang][k];
   });
-  // special HTML nodes
+  // Special HTML nodes with styled spans
   document.querySelector('[data-i18n="info_title"]').innerHTML = currentLang === 'nl'
     ? 'Algemeen <span>&amp; Contact</span>' : 'General <span>&amp; Contact</span>';
-  document.querySelector('[data-i18n="lineup_title"]').innerHTML = currentLang === 'nl'
-    ? 'Line<span>up</span>' : 'Line<span>up</span>';
-  document.querySelector('[data-i18n="schedule_title"]') && (
-    document.querySelector('[data-i18n="schedule_title"]').innerHTML = currentLang === 'nl'
-      ? 'Pro<span>gramma</span>' : 'Pro<span>gramme</span>'
-  );
-  document.querySelector('[data-i18n="map_title"]') && (
-    document.querySelector('[data-i18n="map_title"]').innerHTML = currentLang === 'nl'
-      ? 'Festival<span>kaart</span>' : 'Festival<span>map</span>'
-  );
+  document.querySelector('[data-i18n="lineup_title"]').innerHTML = 'Line<span>up</span>';
+  const schedTitle = document.querySelector('[data-i18n="schedule_title"]');
+  if (schedTitle) schedTitle.innerHTML = currentLang === 'nl'
+    ? 'Pro<span>gramma</span>' : 'Pro<span>gramme</span>';
+  const mapTitle = document.querySelector('[data-i18n="map_title"]');
+  if (mapTitle) mapTitle.innerHTML = currentLang === 'nl'
+    ? 'Festival<span>kaart</span>' : 'Festival<span>map</span>';
   document.getElementById('langToggle').textContent = currentLang === 'nl' ? '🇳🇱' : '🇬🇧';
   renderSchedule();
 }
@@ -129,17 +124,22 @@ document.getElementById('langToggle').addEventListener('click', () => {
 
 // ===== NAVIGATION =====
 let currentPage = 'home';
+
 function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-  const pageMap = { home:'home', info:'home', schedule:'schedule', map:'map' };
+  const pageMap = { home: 'home', info: 'home', schedule: 'schedule', map: 'map' };
   const target = pageMap[page] || page;
 
   const pageEl = document.getElementById('page-' + target);
   if (pageEl) pageEl.classList.add('active');
 
-  const navEl = document.getElementById('nav-' + (page === 'info' ? 'info' : page === 'schedule' ? 'schedule' : page === 'map' ? 'map' : 'home'));
+  const navId = page === 'info' ? 'nav-info'
+    : page === 'schedule' ? 'nav-schedule'
+    : page === 'map' ? 'nav-map'
+    : 'nav-home';
+  const navEl = document.getElementById(navId);
   if (navEl) navEl.classList.add('active');
 
   currentPage = page;
@@ -152,7 +152,6 @@ function switchPage(page) {
 function toggleAccordion(btn) {
   const body = btn.nextElementSibling;
   const isOpen = body.classList.contains('open');
-  // close all
   document.querySelectorAll('.accordion-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.accordion-body').forEach(b => b.classList.remove('open'));
   if (!isOpen) {
@@ -165,6 +164,14 @@ function toggleAccordion(btn) {
 let currentDay = 'zat';
 let favorites = {};
 
+const STAGE_DOTS = {
+  Ponton: '#2bbcd4',
+  Club:   '#9b4dcc',
+  Lake:   '#6666ee',
+  Hangar: '#f7941d',
+  World:  '#2d8b4a'
+};
+
 function switchDay(day) {
   currentDay = day;
   document.getElementById('tabZat').classList.toggle('active', day === 'zat');
@@ -175,28 +182,57 @@ function switchDay(day) {
 function renderSchedule() {
   const grid = document.getElementById('scheduleGrid');
   if (!grid) return;
-  const rows = SCHEDULE[currentDay];
 
-  let html = `<div class="schedule-header">`;
-  TIMES.forEach(t => { html += `<span class="time-label">${t}</span>`; });
+  // Time header row (skip last time label — it's the end marker)
+  let html = `<div class="time-header"><div class="th-blank"></div>`;
+  TIMES.slice(0, -1).forEach(time => {
+    html += `<div class="th-time">${time}</div>`;
+  });
   html += `</div>`;
 
-  rows.forEach(row => {
-    html += `<div class="schedule-row">
-      <div class="stage-name">${row.stage}</div>
+  SCHEDULE[currentDay].forEach((row, ri) => {
+    const sc = row.stage.toLowerCase();
+    const dot = STAGE_DOTS[row.stage] || '#888';
+
+    // Full-width stage separator before each row
+    html += `<div class="stage-separator">
+      <div class="stage-sep-line"></div>
+      <div class="stage-sep-label">
+        <div class="stage-dot-sm" style="background:${dot}"></div>
+        <span>${row.stage}</span>
+      </div>
+      <div class="stage-sep-line"></div>
+    </div>`;
+
+    // Stage label + slots row
+    html += `
+      <div class="stage-label">
+        <div class="stage-label-inner">
+          <div class="stage-dot" style="background:${dot}"></div>
+          <span class="stage-name-label">${row.stage}</span>
+        </div>
+      </div>
       <div class="schedule-slots">`;
+
     row.slots.forEach(slot => {
       if (slot.type === 'empty') {
-        html += `<div class="slot-empty w${slot.w}"></div>`;
+        html += `<div class="slot-empty" style="grid-column:span ${slot.w}"></div>`;
       } else {
         const isFav = favorites[slot.id];
-        html += `<div class="slot-act w${slot.w}${isFav?' fav':''}" onclick="openModal('${slot.id}')">
-          <span>${slot.label}</span>
-          <span class="heart" onclick="event.stopPropagation();toggleFav('${slot.id}',this)">${isFav?'❤️':'♡'}</span>
-        </div>`;
+        html += `
+          <div class="slot-act col-${sc}${isFav ? ' fav' : ''}"
+               style="grid-column:span ${slot.w}"
+               onclick="openModal('${slot.id}')">
+            <span class="act-name">${slot.label}</span>
+            <span class="heart${isFav ? ' fav' : ''}"
+                  onclick="event.stopPropagation();toggleFav('${slot.id}',this)">
+              ${isFav ? '❤️' : '♡'}
+            </span>
+          </div>`;
       }
     });
-    html += `</div></div>`;
+
+    html += `</div>`;
   });
 
   grid.innerHTML = html;
@@ -205,9 +241,11 @@ function renderSchedule() {
 function toggleFav(id, el) {
   favorites[id] = !favorites[id];
   el.textContent = favorites[id] ? '❤️' : '♡';
+  el.classList.toggle('fav', favorites[id]);
   el.closest('.slot-act').classList.toggle('fav', favorites[id]);
   showToast(favorites[id] ? t('toast_fav') : t('toast_unfav'));
-  // sync modal heart
+
+  // Sync heart in open modal
   const mh = document.getElementById('modalHeart');
   if (mh && document.getElementById('modalOverlay').classList.contains('open')) {
     mh.textContent = favorites[id] ? '❤' : '♡';
@@ -217,28 +255,32 @@ function toggleFav(id, el) {
 
 // ===== MODAL =====
 let currentArtistId = null;
+
 function openModal(id) {
   currentArtistId = id;
   const a = ARTISTS[id];
   if (!a) return;
-  const name = a.name || a['name_'+currentLang] || a.name_nl;
-  const stage = a['stage_'+currentLang] || a.stage_nl;
-  const desc = a['desc_'+currentLang] || a.desc_nl;
-  document.getElementById('modalName').textContent = name;
+  const name      = a.name || a['name_' + currentLang] || a.name_nl;
+  const stage     = a['stage_' + currentLang] || a.stage_nl;
+  const desc      = a['desc_' + currentLang]  || a.desc_nl;
+  document.getElementById('modalName').textContent      = name;
   document.getElementById('modalStageTime').textContent = `${stage} · ${a.time}`;
-  document.getElementById('modalDesc').textContent = desc;
+  document.getElementById('modalDesc').textContent      = desc;
   const mh = document.getElementById('modalHeart');
   mh.textContent = favorites[id] ? '❤' : '♡';
   mh.classList.toggle('fav', !!favorites[id]);
   document.getElementById('modalOverlay').classList.add('open');
 }
+
 function closeModal(e) {
   if (e.target === document.getElementById('modalOverlay')) closeModalBtn();
 }
+
 function closeModalBtn() {
   document.getElementById('modalOverlay').classList.remove('open');
   currentArtistId = null;
 }
+
 function toggleModalFav() {
   if (!currentArtistId) return;
   favorites[currentArtistId] = !favorites[currentArtistId];
@@ -252,21 +294,20 @@ function toggleModalFav() {
 // ===== GPS =====
 function locateMe() {
   if (!navigator.geolocation) {
-    showToast(t('toast_gps_err')); return;
+    showToast(t('toast_gps_err'));
+    return;
   }
   navigator.geolocation.getCurrentPosition(
     () => {
-      // Show marker on festival map (simulated position)
-      const dot = document.getElementById('gpsMarker');
+      const dot   = document.getElementById('gpsMarker');
       const pulse = document.getElementById('gpsMarkerPulse');
       if (dot) {
-        dot.style.opacity = '1';
+        dot.style.opacity   = '1';
         pulse.style.opacity = '0.4';
-        // Animate pulse
         let s = 14;
         const anim = setInterval(() => {
           s += 0.5;
-          if (s > 22) { s = 14; }
+          if (s > 22) s = 14;
           if (pulse) pulse.setAttribute('r', s);
         }, 50);
         setTimeout(() => clearInterval(anim), 4000);
