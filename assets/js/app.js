@@ -129,7 +129,7 @@ function switchPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-  const pageMap = { home: 'home', info: 'home', schedule: 'schedule', map: 'map' };
+const pageMap = { home: 'home', info: 'info', schedule: 'schedule', map: 'map' };
   const target = pageMap[page] || page;
 
   const pageEl = document.getElementById('page-' + target);
@@ -253,42 +253,62 @@ function toggleFav(id, el) {
   }
 }
 
-// ===== MODAL =====
-let currentArtistId = null;
+// Build artist grid
+function buildArtistGrid() {
+  const grid = document.getElementById('artistsGrid');
+  if (!grid) return;
+  grid.innerHTML = Object.entries(ARTISTS).map(([id, a]) => `
+    <div class="artist-card" onclick="openModal('${id}')">
+      <div class="artist-card-img" style="background:${a.gradient}">${a.initials}</div>
+      <div class="artist-card-body">
+        <div class="artist-card-name">${a.name}</div>
+        <div class="artist-card-stage">${a.stage}</div>
+      </div>
+    </div>
+  `).join('');
+}
+buildArtistGrid();
 
+// Open modal
 function openModal(id) {
-  currentArtistId = id;
   const a = ARTISTS[id];
   if (!a) return;
-  const name      = a.name || a['name_' + currentLang] || a.name_nl;
-  const stage     = a['stage_' + currentLang] || a.stage_nl;
-  const desc      = a['desc_' + currentLang]  || a.desc_nl;
-  document.getElementById('modalName').textContent      = name;
-  document.getElementById('modalStageTime').textContent = `${stage} · ${a.time}`;
-  document.getElementById('modalDesc').textContent      = desc;
-  const mh = document.getElementById('modalHeart');
-  mh.textContent = favorites[id] ? '❤' : '♡';
-  mh.classList.toggle('fav', !!favorites[id]);
+  document.getElementById('modalImg').style.background = a.gradient;
+  document.getElementById('modalImg').textContent = a.initials;
+  document.getElementById('modalName').textContent = a.name;
+  document.getElementById('modalStageTime').textContent = a.stage;
+  document.getElementById('modalDesc').textContent = a.desc;
+  document.getElementById('modalYT').href = a.youtube;
+  const heart = document.getElementById('modalHeart');
+  const favs = JSON.parse(localStorage.getItem('favs') || '[]');
+  heart.classList.toggle('fav', favs.includes(id));
+  heart.textContent = favs.includes(id) ? '♥' : '♡';
+  heart.dataset.id = id;
   document.getElementById('modalOverlay').classList.add('open');
+}
+
+function closeModalBtn() {
+  document.getElementById('modalOverlay').classList.remove('open');
 }
 
 function closeModal(e) {
   if (e.target === document.getElementById('modalOverlay')) closeModalBtn();
 }
 
-function closeModalBtn() {
-  document.getElementById('modalOverlay').classList.remove('open');
-  currentArtistId = null;
-}
-
 function toggleModalFav() {
-  if (!currentArtistId) return;
-  favorites[currentArtistId] = !favorites[currentArtistId];
-  const mh = document.getElementById('modalHeart');
-  mh.textContent = favorites[currentArtistId] ? '❤' : '♡';
-  mh.classList.toggle('fav', favorites[currentArtistId]);
-  showToast(favorites[currentArtistId] ? t('toast_fav') : t('toast_unfav'));
-  renderSchedule();
+  const heart = document.getElementById('modalHeart');
+  const id = heart.dataset.id;
+  let favs = JSON.parse(localStorage.getItem('favs') || '[]');
+  if (favs.includes(id)) {
+    favs = favs.filter(f => f !== id);
+    heart.textContent = '♡';
+    heart.classList.remove('fav');
+  } else {
+    favs.push(id);
+    heart.textContent = '♥';
+    heart.classList.add('fav');
+  }
+  localStorage.setItem('favs', JSON.stringify(favs));
 }
 
 // ===== GPS =====

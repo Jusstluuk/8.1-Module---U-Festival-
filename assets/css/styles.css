@@ -41,6 +41,15 @@ a { color: inherit; text-decoration: none; }
 button { cursor: pointer; font-family: inherit; }
 
 /* ===== TOPBAR ===== */
+
+.hero-logo {
+  height: 75px;
+  width: auto;
+  display: inline-block;
+  vertical-align: middle;
+  margin-bottom: 4px;
+}
+
 .topbar {
   background: var(--red);
   color: white;
@@ -56,25 +65,21 @@ button { cursor: pointer; font-family: inherit; }
 .topbar-logo {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 26px;
-  letter-spacing: 2px;
-  color: white;
 }
-.logo-u {
-  width: 34px;
-  height: 34px;
-  background: white;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--red);
-  font-size: 20px;
-  font-family: 'Bebas Neue', sans-serif;
-  font-weight: 700;
+
+.logo-img {
+  height: 36px;
+  width: auto;
+  display: block;
 }
+
+/* Light mode: show white logo, hide dark logo */
+.logo-dark  { display: none; }
+.logo-light { display: block; }
+
+/* Dark mode: show dark logo, hide white logo */
+[data-theme="dark"] .logo-light { display: none; }
+[data-theme="dark"] .logo-dark  { display: block; }
 .topbar-controls {
   display: flex;
   align-items: center;
@@ -334,8 +339,20 @@ button { cursor: pointer; font-family: inherit; }
 .info-label:first-child { margin-top: 0; }
 
 /* ===== SCHEDULE ===== */
+/* Schedule layout */
+.schedule-layout{display:flex;gap:12px;align-items:flex-start;}
+.schedule-main{flex:1;min-width:0;}
+.schedule-side{width:46%;max-width:360px;position:sticky;top:68px;background:var(--surface);border-radius:10px;box-shadow:var(--card-shadow);padding:14px;display:none;}
+.schedule-side-inner{display:flex;flex-direction:column;gap:10px;}
+.schedule-side-title{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:var(--teal);}
+.schedule-side-body{font-size:14px;line-height:1.65;color:var(--text2);}
+.schedule-side-body p{margin:0 0 12px 0;}
+
+@media (min-width: 720px){.schedule-side{display:block;}}
+
 /* Schedule */
 .schedule-wrap { overflow-x: auto; padding-bottom: 4px; }
+
 .schedule-scroll { min-width: 520px; }
 #scheduleGrid { display: grid; grid-template-columns: 60px repeat(6, 1fr); }
 
@@ -443,86 +460,81 @@ button { cursor: pointer; font-family: inherit; }
   margin: 2px 0;
 }
 
-/* ===== ARTIST MODAL ===== */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.65);
-  z-index: 200;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.3s;
+/* ===== ARTIST CARDS ===== */
+.artists-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
 }
-.modal-overlay.open { opacity: 1; pointer-events: all; }
-.modal {
+
+.artist-card {
   background: var(--surface);
-  width: 100%;
-  max-width: 600px;
-  border-radius: 18px 18px 0 0;
-  padding: 24px 20px 80px;
-  transform: translateY(100%);
-  transition: transform 0.35s cubic-bezier(.22,1,.36,1);
-  max-height: 80vh;
-  overflow-y: auto;
-}
-.modal-overlay.open .modal { transform: translateY(0); }
-.modal-handle {
-  width: 40px;
-  height: 4px;
-  background: var(--border);
-  border-radius: 2px;
-  margin: 0 auto 20px;
-}
-.modal-artist-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.modal-artist-name {
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 34px;
-  letter-spacing: 1px;
-  color: var(--teal);
-}
-.modal-heart {
-  font-size: 26px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
   cursor: pointer;
-  background: none;
-  border: none;
-  color: var(--text2);
-  transition: color 0.2s;
+  transition: transform 0.15s;
 }
-.modal-heart.fav { color: var(--red); }
-.modal-stage-time {
-  font-size: 13px;
-  color: var(--text2);
-  font-weight: 500;
-  margin-bottom: 14px;
-}
-.modal-desc {
-  font-size: 14px;
-  line-height: 1.7;
-  color: var(--text2);
-}
-.modal-close {
-  position: absolute;
-  top: 16px;
-  right: 16px;
-  background: var(--surface2);
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  font-size: 16px;
-  color: var(--text);
+.artist-card:hover { transform: translateY(-2px); }
+
+.artist-card-img {
+  width: 100%;
+  aspect-ratio: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 24px;
+  color: white;
+  letter-spacing: 1px;
 }
+
+.artist-card-body { padding: 8px 10px 10px; }
+
+.artist-card-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.artist-card-stage {
+  font-size: 11px;
+  color: var(--text2);
+}
+
+/* ===== MODAL ===== */
+.modal-artist-img {
+  width: 72px;
+  height: 72px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: white;
+  margin-bottom: 16px;
+}
+
+.modal-yt-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 18px;
+  background: #ff0000;
+  color: white;
+  padding: 10px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity 0.2s;
+}
+.modal-yt-btn:hover { opacity: 0.85; }
 
 /* ===== MAP ===== */
 .map-container {
@@ -588,13 +600,13 @@ button { cursor: pointer; font-family: inherit; }
 /* ===== ARTIST CARDS ===== */
 .artists-grid {
    display: grid;
-   grid-template-columns: 1fr 1fr;
-   gap: 16px;
+   grid-template-columns: repeat(3, 1fr);
+   gap: 12px;
  }
  @media (min-width: 480px) {
    .artists-grid { grid-template-columns: 1fr 1fr 1fr; }
  }
- .artist-card-img {
+.artist-card-img {
    width: 100%;
    aspect-ratio: 1;
    background: linear-gradient(135deg, var(--teal), #1a7a8a);
@@ -602,7 +614,7 @@ button { cursor: pointer; font-family: inherit; }
    align-items: center;
    justify-content: center;
    font-family: 'Bebas Neue', sans-serif;
-   font-size: 40px;
+   font-size: 30px;
    color: white;
    letter-spacing: 1px;
  }
@@ -616,7 +628,9 @@ button { cursor: pointer; font-family: inherit; }
   box-shadow: var(--card-shadow);
   cursor: pointer;
   transition: transform 0.15s;
+  pointer-events: auto;
 }
+
 .artist-card:hover { transform: translateY(-2px); }
 .artist-card-img {
   width: 100%;
